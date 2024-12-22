@@ -138,6 +138,5 @@ class VKBot:
 
 if __name__ == "__main__":
     load_dotenv(dotenv_path='/root/main/vk_bot/.env')
-    print(os.getenv("token"))
     vk_bot = VKBot(token=os.getenv("token"))
     vk_bot.run()
