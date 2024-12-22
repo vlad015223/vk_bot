@@ -137,7 +137,7 @@ class VKBot:
         self.bot.run_forever()
 
 if __name__ == "__main__":
-    load_dotenv(dotenv_path='~/main/vk_bot/.env')
+    load_dotenv(dotenv_path='/root/main/vk_bot/.env')
     print(os.getenv("token"))
     vk_bot = VKBot(token=os.getenv("token"))
     vk_bot.run()
