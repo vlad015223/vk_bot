@@ -1,16 +1,9 @@
-import json
 import random
 from vkbottle.bot import Bot, Message
 from vkbottle import CtxStorage
+from dotenv import load_dotenv
+import os
 
-# Загрузка конфигурации из файла
-class ConfigLoader:
-    @staticmethod
-    def load_config(file_path="C:/Dev/vk_bot/config.json"):
-        with open(file_path, "r") as config_file:
-            return json.load(config_file)
-
-config = ConfigLoader.load_config()
 
 class VKBot:
     def __init__(self, token):
@@ -25,7 +18,7 @@ class VKBot:
             "Не рассчитывай на это.", "Мой ответ – нет.", "Мои источники говорят – нет.",
             "Перспективы не очень хорошие.", "Очень сомнительно."
         ]
-        self.allowed_user_id = config.get("allowed_user_id", 0)
+        self.allowed_user_id = os.getenv("allowed_user_id")
 
     async def magic_ball_handler(self, message: Message):
         await message.reply(random.choice(self.magic_ball_answers))
@@ -144,5 +137,7 @@ class VKBot:
         self.bot.run_forever()
 
 if __name__ == "__main__":
-    vk_bot = VKBot(token=config["token"])
+    load_dotenv(dotenv_path='~/main/vk_bot/.env')
+    print(os.getenv("token"))
+    vk_bot = VKBot(token=os.getenv("token"))
     vk_bot.run()
