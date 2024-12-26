@@ -84,6 +84,7 @@ class VKBot:
             await message.reply(f"Не удалось получить участников: {e}")
 
     async def one_random_member_handler(self, message: Message):
+        print(message)
         try:
             random_member = await self.get_random_members(message.peer_id)
             random_member = random_member['members']
@@ -107,7 +108,6 @@ class VKBot:
             return user_info[0].id if user_info else None
         except Exception as e:
             print(f"Ошибка при получении информации о пользователе: {e}")
-            return None
 
     async def temp_ban_handler(self, message: Message, any: str):
         admins = await self.get_random_members(message.peer_id)
@@ -125,6 +125,7 @@ class VKBot:
             await message.reply(f"Не удалось найти ID пользователя по ссылке {any}.")
 
     def register_handlers(self):
+        print(self)
         self.bot.on.message(text="Бот шар <any>")(self.magic_ball_handler)
         self.bot.on.message(text="/инфо")(self.get_info_handler)
         self.bot.on.message(text="Бот список <any>")(self.random_members_handler)
