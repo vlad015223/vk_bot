@@ -1,8 +1,17 @@
 import random
 from vkbottle.bot import Bot, Message
+from vkbottle.dispatch.rules import ABCRule
 from vkbottle import CtxStorage
 from dotenv import load_dotenv
 import os
+
+
+class StartsWithRule(ABCRule[Message]):
+    def __init__(self, text: str):
+        self.text = text
+
+    async def check(self, message: Message) -> bool:
+        return message.text.lower().startswith(self.text)
 
 
 class VKBot:
@@ -125,12 +134,12 @@ class VKBot:
             await message.reply(f"Не удалось найти ID пользователя по ссылке {any}.")
 
     def register_handlers(self):
-        self.bot.on.message(lambda message: message.text.lower().startswith("бот шар"))(self.magic_ball_handler)
-        self.bot.on.message(lambda message: message.text.lower().startswith("бот инфо"))(self.get_info_handler)
-        self.bot.on.message(lambda message: message.text.lower().startswith("бот список"))(self.random_members_handler)
-        self.bot.on.message(lambda message: message.text.lower().startswith("бот кто"))(self.one_random_member_handler)
-        self.bot.on.message(lambda message: message.text.lower().startswith("бот инфа"))(self.determination_of_probability_handler)
-        self.bot.on.message(lambda message: message.text.lower().startswith("бот кик"))(self.temp_ban_handler)
+        self.bot.on.message(StartsWithRule("бот шар"))(self.magic_ball_handler)
+        self.bot.on.message(StartsWithRule("бот инфо"))(self.get_info_handler)
+        self.bot.on.message(StartsWithRule("бот список"))(self.random_members_handler)
+        self.bot.on.message(StartsWithRule("бот кто"))(self.one_random_member_handler)
+        self.bot.on.message(StartsWithRule("бот инфа"))(self.determination_of_probability_handler)
+        self.bot.on.message(StartsWithRule("бот кик"))(self.temp_ban_handler)
 
     def run(self):
         self.register_handlers()
