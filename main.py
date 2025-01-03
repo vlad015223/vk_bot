@@ -31,16 +31,35 @@ class VKBot:
 
     async def init_elimination_handler(self, message: Message):
         # Инициализация выбивания
+        error_format = 'Неверный формат. Пример: "Бот убывание <...>: name1, name2, name3"'
         try:
-            text = message.text.split(" ", 4)
-            if len(text) < 4:
-                await message.reply("Неверный формат. Пример: 'Бот убывание кто <...> login1, login2, login3'")
+            if ":" not in message.text:
+                await message.reply(error_format)
                 return
 
-            description = text[3]
-            members = text[4].split(", ")
-            self.ctx.set(f"elimination_{message.peer_id}", {"description": description, "members": members})
-            members_list = "\n".join(f"{i + 1}. {member}" for i, member in enumerate(members))
+            # Разделение на описание и участников
+            parts = message.text.split(":", 1)
+            if len(parts) < 2 or not parts[1].strip():
+                await message.reply(error_format)
+                return
+
+            description = ' '.join(parts[0].strip().split(' ')[3:])
+            members = [member.strip() for member in parts[1].split(",")]
+            names = []
+            for member in members:
+                user_info = await self.bot.api.users.get(user_ids=member.split('|')[0][1:])
+                # Добавляем в список строку с именем и фамилией пользователя
+                for user in user_info:
+                    names.append(f"{user.first_name} {user.last_name}")
+
+            if not members or any(not member for member in members):
+                await message.reply("Список участников не может быть пустым.")
+                return
+
+            # Сохранение данных в контекст
+            self.ctx.set(f"elimination_{message.peer_id}", {"description": description, "members": names})
+            members_list = "\n".join(f"{i + 1}. {member}" for i, member in enumerate(names))
+            
             await message.reply(f"Кто останется, тот {description}:\n{members_list}")
         except Exception as e:
             await message.reply(f"Ошибка: {e}")
@@ -49,7 +68,7 @@ class VKBot:
         # Удаление одного участника
         elimination_data = self.ctx.get(f"elimination_{message.peer_id}")
         if not elimination_data:
-            await message.reply("Процесс выбивания не начат. Используйте 'Бот убывание кто <...> login1, login2, login3'.")
+            await message.reply("Процесс выбивания не начат. Используйте 'Бот убывание <...>: name1, name2, name3'.")
             return
 
         members = elimination_data["members"]
@@ -115,7 +134,14 @@ class VKBot:
 2. Бот кто <кто-то> - Возвращает одного случайного участника.
 3. Бот инфа <на что-то> - Возвращает процент от 0 до 100.
 4. Бот шар <что-то> - Классический шар предсказаний «8» (Magic 8-Ball).
-5. [Только для админов] Бот кик <ссылка на пользователя> - Исключает пользователя из чата.""")
+5. Бот убывание <что-то>: <список участников через запятую> - Составляет список из участников.
+6. Бот минус один - Удаляет случайного участника из списка с команды выше.
+    Пример:
+    - Бот убывание кто лучший name1, name2, name3
+    - Бот минус один (исключается name2)
+    - Бот минус один (исключается name3)
+    Победитель определён! Это name1
+7. [Только для админов] Бот кик <ссылка на пользователя> - Исключает пользователя из чата.""")
         await message.reply(msg)
 
     async def random_members_handler(self, message: Message):
@@ -168,7 +194,7 @@ class VKBot:
             await message.reply(f"Не удалось найти ID пользователя по ссылке {any}.")
 
     def register_handlers(self):
-        self.bot.on.message(StartsWithRule("бот убывание кто"))(self.init_elimination_handler)
+        self.bot.on.message(StartsWithRule("бот убывание"))(self.init_elimination_handler)
         self.bot.on.message(StartsWithRule("бот минус один"))(self.eliminate_one_handler)
         self.bot.on.message(StartsWithRule("бот шар"))(self.magic_ball_handler)
         self.bot.on.message(StartsWithRule("бот инфо"))(self.get_info_handler)
@@ -180,6 +206,7 @@ class VKBot:
     def run(self):
         self.register_handlers()
         self.bot.run_forever()
+
 
 if __name__ == "__main__":
     load_dotenv(dotenv_path='/root/main/vk_bot/.env')
