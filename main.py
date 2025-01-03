@@ -29,6 +29,41 @@ class VKBot:
         ]
         self.allowed_user_id = os.getenv("allowed_user_id")
 
+    async def init_elimination_handler(self, message: Message):
+        # Инициализация выбивания
+        try:
+            text = message.text.split(" ", 4)
+            if len(text) < 4:
+                await message.reply("Неверный формат. Пример: 'Бот убывание кто <...> login1, login2, login3'")
+                return
+
+            description = text[3]
+            members = text[4].split(", ")
+            self.ctx.set(f"elimination_{message.peer_id}", {"description": description, "members": members})
+            members_list = "\n".join(f"{i + 1}. {member}" for i, member in enumerate(members))
+            await message.reply(f"Кто останется, тот {description}:\n{members_list}")
+        except Exception as e:
+            await message.reply(f"Ошибка: {e}")
+
+    async def eliminate_one_handler(self, message: Message):
+        # Удаление одного участника
+        elimination_data = self.ctx.get(f"elimination_{message.peer_id}")
+        if not elimination_data:
+            await message.reply("Процесс выбивания не начат. Используйте 'Бот убывание кто <...> login1, login2, login3'.")
+            return
+
+        members = elimination_data["members"]
+        removed = random.choice(members)
+        members.remove(removed)
+        elimination_data["members"] = members
+        self.ctx.set(f"elimination_{message.peer_id}", elimination_data)
+
+        members_list = "\n".join(f"{i + 1}. {member}" for i, member in enumerate(members))
+        if len(members) > 1:
+            await message.reply(f"Участник {removed} выбыл!\nОставшиеся:\n{members_list}")
+        else:
+            await message.reply(f"Игра окончена, {elimination_data['description']} определён! Это {members[0]}")
+
     async def magic_ball_handler(self, message: Message):
         await message.reply(random.choice(self.magic_ball_answers))
 
@@ -93,7 +128,6 @@ class VKBot:
             await message.reply(f"Не удалось получить участников: {e}")
 
     async def one_random_member_handler(self, message: Message):
-        print(message)
         try:
             random_member = await self.get_random_members(message.peer_id)
             random_member = random_member['members']
@@ -134,6 +168,8 @@ class VKBot:
             await message.reply(f"Не удалось найти ID пользователя по ссылке {any}.")
 
     def register_handlers(self):
+        self.bot.on.message(StartsWithRule("бот убывание кто"))(self.init_elimination_handler)
+        self.bot.on.message(StartsWithRule("бот минус один"))(self.eliminate_one_handler)
         self.bot.on.message(StartsWithRule("бот шар"))(self.magic_ball_handler)
         self.bot.on.message(StartsWithRule("бот инфо"))(self.get_info_handler)
         self.bot.on.message(StartsWithRule("бот список"))(self.random_members_handler)
