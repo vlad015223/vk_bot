@@ -50,7 +50,11 @@ class VKBot:
                 user_info = await self.bot.api.users.get(user_ids=member.split('|')[0][1:])
                 # Добавляем в список строку с именем и фамилией пользователя
                 for user in user_info:
-                    names.append(f"{user.first_name} {user.last_name}")
+                    if f"{user.first_name} {user.last_name}" not in names:
+                        names.append(f"{user.first_name} {user.last_name}")
+            if len(names) == 1:
+                await message.reply("Участников должно быть больше одного.")
+                return
 
             if not members or any(not member for member in members):
                 await message.reply("Список участников не может быть пустым.")
