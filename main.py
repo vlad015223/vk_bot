@@ -182,20 +182,21 @@ class VKBot:
         except Exception as e:
             print(f"Ошибка при получении информации о пользователе: {e}")
 
-    async def temp_ban_handler(self, message: Message, any: str):
+    async def temp_ban_handler(self, message: Message):
+        user_link = message.text.split(' ')[-1]
         admins = await self.get_random_members(message.peer_id)
         admins = admins['admins']
         admin_ids = [self.allowed_user_id] + [admin['id'] for admin in admins]
         if message.from_id not in admin_ids:
             return
-        user_id = await self.get_user_id_by_link(any.strip())
+        user_id = await self.get_user_id_by_link(user_link)
         try:
             await self.bot.api.messages.remove_chat_user(
                 chat_id=message.peer_id - 2000000000,
                 member_id=user_id
             )
         except:
-            await message.reply(f"Не удалось найти ID пользователя по ссылке {any}.")
+            await message.reply(f"Не удалось найти ID пользователя по ссылке {user_link}.")
 
     def register_handlers(self):
         self.bot.on.message(StartsWithRule("бот убывание"))(self.init_elimination_handler)
